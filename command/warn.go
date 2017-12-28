@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
@@ -14,7 +15,7 @@ func init() {
 	Register("warnset", WarnSet)
 }
 
-func Warn(ctx *Context, message *tgbotapi.Message) error {
+func Warn(ctx *context.Context, message *tgbotapi.Message) error {
 	sender, err := util.GetSender(ctx.TG, message)
 	if err != nil {
 		return err
@@ -61,7 +62,7 @@ func Warn(ctx *Context, message *tgbotapi.Message) error {
 	return nil
 }
 
-func WarnSet(ctx *Context, message *tgbotapi.Message) error {
+func WarnSet(ctx *context.Context, message *tgbotapi.Message) error {
 	sender, err := util.GetSender(ctx.TG, message)
 	if err != nil {
 		return err

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	b := &bot.Bot{}
+	b := bot.New()
 
 	var err error
 	b.Config, err = config.Load("config.json")

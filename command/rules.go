@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 
+	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
@@ -13,7 +14,7 @@ func init() {
 	Register("rulesset", RulesSet)
 }
 
-func Rules(ctx *Context, message *tgbotapi.Message) error {
+func Rules(ctx *context.Context, message *tgbotapi.Message) error {
 	rules, err := ctx.DB.RulesGet(message.Chat.ID)
 	if err != nil {
 		return err
@@ -25,7 +26,7 @@ func Rules(ctx *Context, message *tgbotapi.Message) error {
 	return err
 }
 
-func RulesSet(ctx *Context, message *tgbotapi.Message) error {
+func RulesSet(ctx *context.Context, message *tgbotapi.Message) error {
 	if args := message.CommandArguments(); args != "" {
 		sender, err := util.GetSender(ctx.TG, message)
 		if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
@@ -14,27 +15,27 @@ func init() {
 	Register("wordlog", WordLog)
 }
 
-func WordLog(ctx *Context, message *tgbotapi.Message) error {
-	if ctx.cache.data == nil {
-		ctx.cache.mu.Lock()
-		if ctx.cache.data == nil {
+func WordLog(ctx *context.Context, message *tgbotapi.Message) error {
+	if ctx.Cache.Data == nil {
+		ctx.Cache.Mu.Lock()
+		if ctx.Cache.Data == nil {
 			whitelist, err := ctx.DB.WordLogWlGet()
 			if err != nil {
-				ctx.cache.mu.Unlock()
+				ctx.Cache.Mu.Unlock()
 				return err
 			}
 
 			blacklist, err := ctx.DB.WordLogBlGet()
 			if err != nil {
-				ctx.cache.mu.Unlock()
+				ctx.Cache.Mu.Unlock()
 				return err
 			}
 
-			ctx.cache.data = make(map[string]interface{})
-			ctx.cache.data["whitelist"] = whitelist
-			ctx.cache.data["blacklist"] = blacklist
+			ctx.Cache.Data = make(map[string]interface{})
+			ctx.Cache.Data["whitelist"] = whitelist
+			ctx.Cache.Data["blacklist"] = blacklist
 		}
-		ctx.cache.mu.Unlock()
+		ctx.Cache.Mu.Unlock()
 	}
 
 	if message.Chat.ID == ctx.Config.WL.ControlGroup {
@@ -64,15 +65,15 @@ func WordLog(ctx *Context, message *tgbotapi.Message) error {
 		}
 	}
 
-	ctx.cache.mu.RLock()
-	defer ctx.cache.mu.RUnlock()
+	ctx.Cache.Mu.RLock()
+	defer ctx.Cache.Mu.RUnlock()
 
-	whitelist, ok := ctx.cache.data["whitelist"].([]string)
+	whitelist, ok := ctx.Cache.Data["whitelist"].([]string)
 	if !ok {
 		return fmt.Errorf("whitelist not available")
 	}
 
-	blacklist, ok := ctx.cache.data["blacklist"].([]string)
+	blacklist, ok := ctx.Cache.Data["blacklist"].([]string)
 	if !ok {
 		return fmt.Errorf("blacklist not available")
 	}
@@ -105,13 +106,13 @@ done:
 	return nil
 }
 
-func LogMessage(ctx *Context, message *tgbotapi.Message) error {
+func LogMessage(ctx *context.Context, message *tgbotapi.Message) error {
 	forward := tgbotapi.NewForward(ctx.Config.WL.LogChannel, message.Chat.ID, message.MessageID)
 	_, err := ctx.TG.Send(forward)
 	return err
 }
 
-func WordLogWlAdd(ctx *Context, message *tgbotapi.Message) error {
+func WordLogWlAdd(ctx *context.Context, message *tgbotapi.Message) error {
 	if args := message.CommandArguments(); args != "" {
 		word := strings.Split(args, " ")[0]
 		err := ctx.DB.WordLogWlAdd(word)
@@ -119,15 +120,15 @@ func WordLogWlAdd(ctx *Context, message *tgbotapi.Message) error {
 			return err
 		}
 
-		ctx.cache.mu.Lock()
-		defer ctx.cache.mu.Unlock()
+		ctx.Cache.Mu.Lock()
+		defer ctx.Cache.Mu.Unlock()
 
-		whitelist, ok := ctx.cache.data["whitelist"].([]string)
+		whitelist, ok := ctx.Cache.Data["whitelist"].([]string)
 		if !ok {
 			return fmt.Errorf("whitelist not available")
 		}
 
-		ctx.cache.data["whitelist"] = append(whitelist, word)
+		ctx.Cache.Data["whitelist"] = append(whitelist, word)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been added to the whitelist</b>", word)
 		reply := util.ReplyTo(message, response)
@@ -139,12 +140,12 @@ func WordLogWlAdd(ctx *Context, message *tgbotapi.Message) error {
 	return nil
 }
 
-func WordLogWlDel(ctx *Context, message *tgbotapi.Message) error {
+func WordLogWlDel(ctx *context.Context, message *tgbotapi.Message) error {
 	if args := message.CommandArguments(); args != "" {
-		ctx.cache.mu.Lock()
-		defer ctx.cache.mu.Unlock()
+		ctx.Cache.Mu.Lock()
+		defer ctx.Cache.Mu.Unlock()
 
-		whitelist, ok := ctx.cache.data["whitelist"].([]string)
+		whitelist, ok := ctx.Cache.Data["whitelist"].([]string)
 		if !ok {
 			return fmt.Errorf("whitelist not available")
 		}
@@ -167,7 +168,7 @@ func WordLogWlDel(ctx *Context, message *tgbotapi.Message) error {
 			return err
 		}
 
-		ctx.cache.data["whitelist"] = append(whitelist[:wordIndex], whitelist[wordIndex+1:]...)
+		ctx.Cache.Data["whitelist"] = append(whitelist[:wordIndex], whitelist[wordIndex+1:]...)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been remove from the whitelist</b>", word)
 		reply := util.ReplyTo(message, response)
@@ -179,7 +180,7 @@ func WordLogWlDel(ctx *Context, message *tgbotapi.Message) error {
 	return nil
 }
 
-func WordLogBlAdd(ctx *Context, message *tgbotapi.Message) error {
+func WordLogBlAdd(ctx *context.Context, message *tgbotapi.Message) error {
 	if args := message.CommandArguments(); args != "" {
 		word := strings.Split(args, " ")[0]
 		err := ctx.DB.WordLogBlAdd(word)
@@ -187,15 +188,15 @@ func WordLogBlAdd(ctx *Context, message *tgbotapi.Message) error {
 			return err
 		}
 
-		ctx.cache.mu.Lock()
-		defer ctx.cache.mu.Unlock()
+		ctx.Cache.Mu.Lock()
+		defer ctx.Cache.Mu.Unlock()
 
-		blacklist, ok := ctx.cache.data["blacklist"].([]string)
+		blacklist, ok := ctx.Cache.Data["blacklist"].([]string)
 		if !ok {
 			return fmt.Errorf("blacklist not available")
 		}
 
-		ctx.cache.data["blacklist"] = append(blacklist, word)
+		ctx.Cache.Data["blacklist"] = append(blacklist, word)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been added to the blacklist</b>", word)
 		reply := util.ReplyTo(message, response)
@@ -207,12 +208,12 @@ func WordLogBlAdd(ctx *Context, message *tgbotapi.Message) error {
 	return nil
 }
 
-func WordLogBlDel(ctx *Context, message *tgbotapi.Message) error {
+func WordLogBlDel(ctx *context.Context, message *tgbotapi.Message) error {
 	if args := message.CommandArguments(); args != "" {
-		ctx.cache.mu.Lock()
-		defer ctx.cache.mu.Unlock()
+		ctx.Cache.Mu.Lock()
+		defer ctx.Cache.Mu.Unlock()
 
-		blacklist, ok := ctx.cache.data["blacklist"].([]string)
+		blacklist, ok := ctx.Cache.Data["blacklist"].([]string)
 		if !ok {
 			return fmt.Errorf("blacklist not available")
 		}
@@ -235,7 +236,7 @@ func WordLogBlDel(ctx *Context, message *tgbotapi.Message) error {
 			return err
 		}
 
-		ctx.cache.data["blacklist"] = append(blacklist[:wordIndex], blacklist[wordIndex+1:]...)
+		ctx.Cache.Data["blacklist"] = append(blacklist[:wordIndex], blacklist[wordIndex+1:]...)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been remove from the blacklist</b>", word)
 		reply := util.ReplyTo(message, response)

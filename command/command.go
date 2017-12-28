@@ -3,19 +3,12 @@ package command
 import (
 	"sync"
 
-	"github.com/NANNERPISS/NANNERPISS/config"
-	"github.com/NANNERPISS/NANNERPISS/db"
+	"github.com/NANNERPISS/NANNERPISS/context"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
 
-type Context struct {
-	Config *config.Config
-	DB     db.DB
-	TG     *tgbotapi.BotAPI
-}
-
-type cmdFunc func(*Context, *tgbotapi.Message) error
+type cmdFunc func(*context.Context, *tgbotapi.Message) error
 
 var (
 	cmdsMu sync.RWMutex

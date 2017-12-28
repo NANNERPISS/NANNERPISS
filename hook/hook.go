@@ -1,25 +1,12 @@
 package hook
 
 import (
-	"sync"
-
-	"github.com/NANNERPISS/NANNERPISS/config"
-	"github.com/NANNERPISS/NANNERPISS/db"
+	"github.com/NANNERPISS/NANNERPISS/context"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
 
-type Context struct {
-	Config *config.Config
-	DB     db.DB
-	TG     *tgbotapi.BotAPI
-	cache  struct {
-		mu   sync.RWMutex
-		data map[string]interface{}
-	}
-}
-
-type hookFunc func(*Context, *tgbotapi.Message) error
+type hookFunc func(*context.Context, *tgbotapi.Message) error
 
 type Hook struct {
 	Name string
