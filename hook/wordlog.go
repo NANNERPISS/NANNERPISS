@@ -108,7 +108,7 @@ func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 		for _, word := range blacklist {
 			if strings.Contains(strings.ToLower(scanner.Text()), strings.ToLower(word)) {
 				for _, excluded := range whitelist {
-					if strings.ToLower(scanner.Text()) == strings.ToLower(excluded) {
+					if strings.Index(strings.ToLower(scanner.Text()), strings.ToLower(excluded)) == 0 {
 						break whitelisted
 					}
 				}
