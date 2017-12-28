@@ -29,9 +29,12 @@ func (b *bot) Run() {
 
 	for update := range updates {
 		go (func(update tgbotapi.Update) {
-			message := update.Message
-			if message == nil {
-				return
+			var message *tgbotapi.Message
+			if message = update.Message; message == nil {
+				if message = update.EditedMessage; message == nil {
+					// No usable message
+					return
+				}
 			}
 			if !message.Chat.IsGroup() && !message.Chat.IsSuperGroup() {
 				return
