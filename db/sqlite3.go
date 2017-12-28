@@ -286,7 +286,7 @@ func (dr *sqlite3) WordLogWlAdd(word string) (err error) {
 	}()
 
 	stmt, err := tx.Prepare(`
-	INSERT OR REPLACE INTO word_whitelist (word) VALUES (?)
+	INSERT INTO word_whitelist (word) VALUES (?)
 	`)
 	if err != nil {
 		return err
@@ -350,7 +350,7 @@ func (dr *sqlite3) WordLogBlAdd(word string) (err error) {
 	}()
 
 	stmt, err := tx.Prepare(`
-	INSERT OR REPLACE INTO word_blacklist (word) VALUES (?)
+	INSERT INTO word_blacklist (word) VALUES (?)
 	`)
 	if err != nil {
 		return err
