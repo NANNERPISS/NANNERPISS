@@ -269,8 +269,8 @@ func (dr *sqlite3) WordLogBlGet() ([]string, error) {
 }
 
 func (dr *sqlite3) WordLogWlAdd(word string) (err error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
 
 	tx, err := dr.db.Begin()
 	if err != nil {
@@ -301,8 +301,8 @@ func (dr *sqlite3) WordLogWlAdd(word string) (err error) {
 }
 
 func (dr *sqlite3) WordLogWlDel(word string) (err error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
 
 	tx, err := dr.db.Begin()
 	if err != nil {
@@ -333,8 +333,8 @@ func (dr *sqlite3) WordLogWlDel(word string) (err error) {
 }
 
 func (dr *sqlite3) WordLogBlAdd(word string) (err error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
 
 	tx, err := dr.db.Begin()
 	if err != nil {
@@ -365,8 +365,8 @@ func (dr *sqlite3) WordLogBlAdd(word string) (err error) {
 }
 
 func (dr *sqlite3) WordLogBlDel(word string) (err error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
 
 	tx, err := dr.db.Begin()
 	if err != nil {
