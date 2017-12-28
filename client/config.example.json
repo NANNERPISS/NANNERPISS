@@ -1,0 +1,13 @@
+{
+	"DB": {
+		"Driver": "sqlite3",
+		"Source": "bot.db"
+	},
+	"TG": {
+		"Token": "change_me"
+	},
+	"WL": {
+		"ControlGroup": -1234,
+		"LogChannel": -5678
+	}
+}
