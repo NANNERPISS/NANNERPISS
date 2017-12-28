@@ -68,14 +68,28 @@ func WordLog(ctx *context.Context, message *tgbotapi.Message) error {
 	ctx.Cache.Mu.RLock()
 	defer ctx.Cache.Mu.RUnlock()
 
+	found, err := WordLogText(ctx, message)
+	if err != nil {
+		return err
+	}
+	
+	if found {
+		err := LogMessage(ctx, message)
+		return err
+	}
+	
+	return nil
+}
+
+func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) {
 	whitelist, ok := ctx.Cache.Data["whitelist"].([]string)
 	if !ok {
-		return fmt.Errorf("whitelist not available")
+		return false, fmt.Errorf("whitelist not available")
 	}
 
 	blacklist, ok := ctx.Cache.Data["blacklist"].([]string)
 	if !ok {
-		return fmt.Errorf("blacklist not available")
+		return false, fmt.Errorf("blacklist not available")
 	}
 	
 	var messageText string
@@ -89,8 +103,6 @@ func WordLog(ctx *context.Context, message *tgbotapi.Message) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanWords)
 
-	var containsWord bool
-done:
 	for scanner.Scan() {
 	whitelisted:
 		for _, word := range blacklist {
@@ -101,16 +113,12 @@ done:
 					}
 				}
 				// Not whitelisted
-				containsWord = true
-				break done
+				return true, nil
 			}
 		}
 	}
-	if containsWord {
-		err := LogMessage(ctx, message)
-		return err
-	}
-	return nil
+	
+	return false, nil
 }
 
 func LogMessage(ctx *context.Context, message *tgbotapi.Message) error {
