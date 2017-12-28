@@ -77,8 +77,15 @@ func WordLog(ctx *context.Context, message *tgbotapi.Message) error {
 	if !ok {
 		return fmt.Errorf("blacklist not available")
 	}
+	
+	var messageText string
+	if message.Text != "" {
+		messageText = message.Text
+	} else if message.Caption != "" {
+		messageText = message.Caption
+	}
 
-	reader := strings.NewReader(message.Text)
+	reader := strings.NewReader(messageText)
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanWords)
 
