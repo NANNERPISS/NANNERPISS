@@ -2,12 +2,20 @@ package hook
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"image/png"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
+	"github.com/otiai10/gosseract"
+	"golang.org/x/image/webp"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -68,20 +76,33 @@ func WordLog(ctx *context.Context, message *tgbotapi.Message) error {
 	ctx.Cache.Mu.RLock()
 	defer ctx.Cache.Mu.RUnlock()
 
-	found, err := WordLogText(ctx, message)
+	var found bool
+	var err error
+
+	found, err = WordLogText(ctx, message)
 	if err != nil {
 		return err
 	}
-	
+
 	if found {
-		err := LogMessage(ctx, message)
+		err = LogMessage(ctx, message)
 		return err
 	}
-	
+
+	found, err = WordLogFile(ctx, message)
+	if err != nil {
+		return err
+	}
+
+	if found {
+		err = LogMessage(ctx, message)
+		return err
+	}
+
 	return nil
 }
 
-func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) {
+func containsBlacklist(ctx *context.Context, messageText string) (bool, error) {
 	whitelist, ok := ctx.Cache.Data["whitelist"].([]string)
 	if !ok {
 		return false, fmt.Errorf("whitelist not available")
@@ -90,13 +111,6 @@ func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 	blacklist, ok := ctx.Cache.Data["blacklist"].([]string)
 	if !ok {
 		return false, fmt.Errorf("blacklist not available")
-	}
-	
-	var messageText string
-	if message.Text != "" {
-		messageText = message.Text
-	} else if message.Caption != "" {
-		messageText = message.Caption
 	}
 
 	reader := strings.NewReader(messageText)
@@ -117,8 +131,118 @@ func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 			}
 		}
 	}
-	
+
 	return false, nil
+}
+
+func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) {
+	var messageText string
+	if message.Text != "" {
+		messageText = message.Text
+	} else if message.Caption != "" {
+		messageText = message.Caption
+	} else {
+		return false, nil
+	}
+
+	blacklisted, err := containsBlacklist(ctx, messageText)
+
+	return blacklisted, err
+}
+
+func WordLogFile(ctx *context.Context, message *tgbotapi.Message) (bool, error) {
+	var fileID string
+	switch {
+	case message.Photo != nil:
+		if len(*message.Photo) != 0 {
+			fileID = (*message.Photo)[len(*message.Photo)-1].FileID
+		}
+	case message.Document != nil:
+		switch message.Document.MimeType {
+		case "image/jpeg", "image/png", "image/bmp":
+			fileID = message.Document.FileID
+		}
+	case message.Sticker != nil:
+		fileID = message.Sticker.FileID
+	}
+
+	if fileID == "" {
+		return false, nil
+	}
+
+	downloadURL, err := ctx.TG.GetFileDirectURL(fileID)
+	if err != nil {
+		return false, err
+	}
+
+	if _, err := os.Stat(ctx.Config.WL.DataDir); os.IsNotExist(err) {
+		err = os.MkdirAll(ctx.Config.WL.DataDir, 0700)
+		if err != nil {
+			return false, err
+		}
+	}
+	outputPath := filepath.Join(ctx.Config.WL.DataDir, fileID)
+
+	outputFile, err := os.Create(outputPath)
+	if err != nil {
+		return false, err
+	}
+	defer os.Remove(outputPath)
+	defer outputFile.Close()
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", downloadURL, nil)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	buf := bytes.NewBuffer(nil)
+
+	_, err = io.Copy(buf, resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	resp.Body.Close()
+
+	if mime := http.DetectContentType(buf.Bytes()); mime == "image/webp" {
+		image, err := webp.Decode(buf)
+		if err != nil {
+			return false, err
+		}
+
+		err = png.Encode(outputFile, image)
+		if err != nil {
+			return false, err
+		}
+	} else {
+		io.Copy(outputFile, buf)
+	}
+
+	outputFile.Close()
+
+	ocr := gosseract.NewClient()
+	defer ocr.Close()
+
+	ocr.SetImage(outputPath)
+
+	messageText, err := ocr.Text()
+	if err != nil {
+		return false, nil
+	}
+
+	fmt.Println(messageText)
+
+	blacklisted, err := containsBlacklist(ctx, messageText)
+
+	return blacklisted, err
 }
 
 func LogMessage(ctx *context.Context, message *tgbotapi.Message) error {

@@ -8,6 +8,7 @@
 	},
 	"WL": {
 		"ControlGroup": -1234,
+		"DataDir": "./data",
 		"LogChannel": -5678
 	}
 }

@@ -17,6 +17,7 @@ type Config struct {
 	}
 	WL struct {
 		ControlGroup int64
+		DataDir      string
 		LogChannel   int64
 	}
 }
