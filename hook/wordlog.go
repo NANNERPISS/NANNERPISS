@@ -15,7 +15,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"github.com/otiai10/gosseract"
-	"golang.org/x/image/webp"
+	"github.com/chai2010/webp"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -231,6 +231,7 @@ func WordLogFile(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 	ocr := gosseract.NewClient()
 	defer ocr.Close()
 
+	ocr.SetPageSegMode(gosseract.PSM_SPARSE_TEXT)
 	ocr.SetImage(outputPath)
 
 	messageText, err := ocr.Text()
