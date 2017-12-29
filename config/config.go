@@ -16,9 +16,9 @@ type Config struct {
 		Token string
 	}
 	WL struct {
-		ControlGroup int64
-		DataDir      string
-		LogChannel   int64
+		ControlGroup    int64
+		CredentialsFile string
+		LogChannel      int64
 	}
 }
 

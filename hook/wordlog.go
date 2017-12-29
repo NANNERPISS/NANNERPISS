@@ -2,20 +2,16 @@ package hook
 
 import (
 	"bufio"
-	"bytes"
+	gocontext "context"
 	"fmt"
-	"image/png"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
-	"github.com/otiai10/gosseract"
-	"github.com/chai2010/webp"
+	vision "cloud.google.com/go/vision/apiv1"
+	"google.golang.org/api/option"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -175,21 +171,6 @@ func WordLogFile(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 		return false, err
 	}
 
-	if _, err := os.Stat(ctx.Config.WL.DataDir); os.IsNotExist(err) {
-		err = os.MkdirAll(ctx.Config.WL.DataDir, 0700)
-		if err != nil {
-			return false, err
-		}
-	}
-	outputPath := filepath.Join(ctx.Config.WL.DataDir, fileID)
-
-	outputFile, err := os.Create(outputPath)
-	if err != nil {
-		return false, err
-	}
-	defer os.Remove(outputPath)
-	defer outputFile.Close()
-
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", downloadURL, nil)
@@ -202,41 +183,29 @@ func WordLogFile(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 		return false, err
 	}
 	defer resp.Body.Close()
-
-	buf := bytes.NewBuffer(nil)
-
-	_, err = io.Copy(buf, resp.Body)
+	
+	visionCtx := gocontext.Background()
+	
+	visionClient, err := vision.NewImageAnnotatorClient(visionCtx, option.WithCredentialsFile(ctx.Config.WL.CredentialsFile))
 	if err != nil {
 		return false, err
 	}
-
-	resp.Body.Close()
-
-	if mime := http.DetectContentType(buf.Bytes()); mime == "image/webp" {
-		image, err := webp.Decode(buf)
-		if err != nil {
-			return false, err
-		}
-
-		err = png.Encode(outputFile, image)
-		if err != nil {
-			return false, err
-		}
-	} else {
-		io.Copy(outputFile, buf)
-	}
-
-	outputFile.Close()
-
-	ocr := gosseract.NewClient()
-	defer ocr.Close()
-
-	ocr.SetPageSegMode(gosseract.PSM_SPARSE_TEXT)
-	ocr.SetImage(outputPath)
-
-	messageText, err := ocr.Text()
+	
+	image, err := vision.NewImageFromReader(resp.Body)
 	if err != nil {
+		return false, err
+	}
+	
+	annotations, err := visionClient.DetectTexts(visionCtx, image, nil, 1)
+	if err != nil {
+		return false, err
+	}
+	
+	var messageText string
+	if len(annotations) == 0 {
 		return false, nil
+	} else {
+		messageText = annotations[0].Description
 	}
 
 	fmt.Println(messageText)

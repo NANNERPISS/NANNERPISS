@@ -8,7 +8,7 @@
 	},
 	"WL": {
 		"ControlGroup": -1234,
-		"DataDir": "./data",
+		"CredentialsFile": "./secret.json",
 		"LogChannel": -5678
 	}
 }
