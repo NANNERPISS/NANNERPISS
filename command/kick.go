@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
+	Register("ban", Kick)
 	Register("kick", Kick)
 }
 
@@ -40,13 +41,13 @@ func Kick(ctx *context.Context, message *tgbotapi.Message) error {
 			resp, err := ctx.TG.KickChatMember(tgbotapi.KickChatMemberConfig{ChatMemberConfig: chatMemberConfig})
 			if !resp.Ok {
 				response := fmt.Sprintf("Sorry, I can't kick %s", userStr)
-				reply := util.ReplyTo(message, response)
+				reply := util.ReplyTo(message, response, "html")
 				_, err = ctx.TG.Send(reply)
 				return err
 			}
 
 			response := fmt.Sprintf("Kicked %s", userStr)
-			reply := util.ReplyTo(message, response)
+			reply := util.ReplyTo(message, response, "html")
 			_, err = ctx.TG.Send(reply)
 			return err
 		}

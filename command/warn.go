@@ -12,7 +12,7 @@ import (
 
 func init() {
 	Register("warn", Warn)
-	Register("warnset", WarnSet)
+	Register("warnmaxset", WarnMaxSet)
 }
 
 func Warn(ctx *context.Context, message *tgbotapi.Message) error {
@@ -23,7 +23,7 @@ func Warn(ctx *context.Context, message *tgbotapi.Message) error {
 
 	if sender.IsAdministrator() || sender.IsCreator() {
 		if message.ReplyToMessage == nil {
-			reply := util.ReplyTo(message, "Please reply to the user you want to warn")
+			reply := util.ReplyTo(message, "Please reply to the user you want to warn", "")
 			_, err := ctx.TG.Send(reply)
 			return err
 		}
@@ -49,20 +49,29 @@ func Warn(ctx *context.Context, message *tgbotapi.Message) error {
 		}
 		warnMsg := fmt.Sprintf(`%s<b> has been warned for this message</b> (<code>%d/%d</code>)`, userStr, warnCount, warnMax)
 
-		reply := util.ReplyTo(message.ReplyToMessage, warnMsg)
+		reply := util.ReplyTo(message.ReplyToMessage, warnMsg, "HTML")
 		_, err = ctx.TG.Send(reply)
-
-		if warnCount >= warnMax {
-			err = Kick(ctx, message)
+		if err != nil {
+			return err
 		}
 
-		return err
+		if warnCount >= warnMax {
+			err = ctx.DB.WarnSet(message.Chat.ID, message.ReplyToMessage.From.ID, 0)
+			if err != nil {
+				return err
+			}
+			
+			err = Kick(ctx, message)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func WarnSet(ctx *context.Context, message *tgbotapi.Message) error {
+func WarnMaxSet(ctx *context.Context, message *tgbotapi.Message) error {
 	sender, err := util.GetSender(ctx.TG, message)
 	if err != nil {
 		return err
@@ -75,12 +84,12 @@ func WarnSet(ctx *context.Context, message *tgbotapi.Message) error {
 				return err
 			}
 
-			err = ctx.DB.WarnSet(message.Chat.ID, parsedCount)
+			err = ctx.DB.WarnMaxSet(message.Chat.ID, parsedCount)
 			if err != nil {
 				return err
 			}
 
-			reply := util.ReplyTo(message, fmt.Sprintf(`<b>Max Warning Count</b> has been set to <code>%d</code>`, parsedCount))
+			reply := util.ReplyTo(message, fmt.Sprintf(`<b>Max Warning Count</b> has been set to <code>%d</code>`, parsedCount), "HTML")
 			_, err = ctx.TG.Send(reply)
 
 			return err

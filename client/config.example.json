@@ -4,11 +4,19 @@
 		"Source": "bot.db"
 	},
 	"TG": {
-		"Token": "change_me"
+		"Token": "change_me",
+		"ControlGroup": -6666
 	},
 	"WL": {
 		"ControlGroup": -1234,
 		"CredentialsFile": "./secret.json",
 		"LogChannel": -5678
+	},
+	"TW": {
+		"ControlGroup": -4444,
+		"ConsumerKey": "123",
+		"ConsumerSecret": "456",
+		"AccessToken": "789-100",
+		"AccessSecret": "9876"
 	}
 }

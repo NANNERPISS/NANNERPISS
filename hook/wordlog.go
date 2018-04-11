@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
@@ -123,6 +124,7 @@ func containsBlacklist(ctx *context.Context, messageText string) (bool, error) {
 					}
 				}
 				// Not whitelisted
+				fmt.Println(scanner.Text(), ":", word)
 				return true, nil
 			}
 		}
@@ -172,6 +174,7 @@ func WordLogFile(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 	}
 
 	client := &http.Client{}
+	client.Timeout = time.Second * 30
 
 	req, err := http.NewRequest("GET", downloadURL, nil)
 	if err != nil {
@@ -183,24 +186,25 @@ func WordLogFile(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 		return false, err
 	}
 	defer resp.Body.Close()
-	
+
 	visionCtx := gocontext.Background()
-	
+
 	visionClient, err := vision.NewImageAnnotatorClient(visionCtx, option.WithCredentialsFile(ctx.Config.WL.CredentialsFile))
 	if err != nil {
 		return false, err
 	}
-	
+	defer visionClient.Close()
+
 	image, err := vision.NewImageFromReader(resp.Body)
 	if err != nil {
 		return false, err
 	}
-	
+
 	annotations, err := visionClient.DetectTexts(visionCtx, image, nil, 1)
 	if err != nil {
 		return false, err
 	}
-	
+
 	var messageText string
 	if len(annotations) == 0 {
 		return false, nil
@@ -240,7 +244,7 @@ func WordLogWlAdd(ctx *context.Context, message *tgbotapi.Message) error {
 		ctx.Cache.Data["whitelist"] = append(whitelist, word)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been added to the whitelist</b>", word)
-		reply := util.ReplyTo(message, response)
+		reply := util.ReplyTo(message, response, "HTML")
 		_, err = ctx.TG.Send(reply)
 
 		return err
@@ -280,7 +284,7 @@ func WordLogWlDel(ctx *context.Context, message *tgbotapi.Message) error {
 		ctx.Cache.Data["whitelist"] = append(whitelist[:wordIndex], whitelist[wordIndex+1:]...)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been remove from the whitelist</b>", word)
-		reply := util.ReplyTo(message, response)
+		reply := util.ReplyTo(message, response, "HTML")
 		_, err = ctx.TG.Send(reply)
 
 		return err
@@ -308,7 +312,7 @@ func WordLogBlAdd(ctx *context.Context, message *tgbotapi.Message) error {
 		ctx.Cache.Data["blacklist"] = append(blacklist, word)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been added to the blacklist</b>", word)
-		reply := util.ReplyTo(message, response)
+		reply := util.ReplyTo(message, response, "HTML")
 		_, err = ctx.TG.Send(reply)
 
 		return err
@@ -348,7 +352,7 @@ func WordLogBlDel(ctx *context.Context, message *tgbotapi.Message) error {
 		ctx.Cache.Data["blacklist"] = append(blacklist[:wordIndex], blacklist[wordIndex+1:]...)
 
 		response := fmt.Sprintf("<code>%s</code><b> has been remove from the blacklist</b>", word)
-		reply := util.ReplyTo(message, response)
+		reply := util.ReplyTo(message, response, "HTML")
 		_, err = ctx.TG.Send(reply)
 
 		return err

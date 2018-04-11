@@ -20,7 +20,7 @@ func Rules(ctx *context.Context, message *tgbotapi.Message) error {
 		return err
 	}
 
-	reply := util.ReplyTo(message, rules)
+	reply := util.ReplyTo(message, rules, "")
 	_, err = ctx.TG.Send(reply)
 
 	return err
@@ -40,7 +40,7 @@ func RulesSet(ctx *context.Context, message *tgbotapi.Message) error {
 			}
 
 			response := fmt.Sprintf(`<b>Rules have been updated</b>`)
-			reply := util.ReplyTo(message, response)
+			reply := util.ReplyTo(message, response, "HTML")
 			_, err = ctx.TG.Send(reply)
 
 			return err

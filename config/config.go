@@ -13,12 +13,20 @@ type Config struct {
 		Source string
 	}
 	TG struct {
-		Token string
+		Token        string
+		ControlGroup int64
 	}
 	WL struct {
 		ControlGroup    int64
 		CredentialsFile string
 		LogChannel      int64
+	}
+	TW struct {
+		ControlGroup   int64
+		ConsumerKey    string
+		ConsumerSecret string
+		AccessToken    string
+		AccessSecret   string
 	}
 }
 

@@ -13,7 +13,7 @@ func init() {
 
 func Echo(ctx *context.Context, message *tgbotapi.Message) error {
 	if args := message.CommandArguments(); args != "" {
-		reply := util.ReplyTo(message, args)
+		reply := util.ReplyTo(message, args, "")
 		_, err := ctx.TG.Send(reply)
 		return err
 	}

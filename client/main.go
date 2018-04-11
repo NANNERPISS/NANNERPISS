@@ -6,6 +6,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/db"
 
 	"gopkg.in/telegram-bot-api.v4"
+	"github.com/ChimeraCoder/anaconda"
 )
 
 func main() {
@@ -24,6 +25,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	b.TW = anaconda.NewTwitterApiWithCredentials(
+		b.Config.TW.AccessToken, b.Config.TW.AccessSecret,
+		b.Config.TW.ConsumerKey, b.Config.TW.ConsumerSecret,
+	)
 
 	b.Run()
 }

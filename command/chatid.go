@@ -20,7 +20,7 @@ func ChatID(ctx *context.Context, message *tgbotapi.Message) error {
 	}
 
 	if sender.IsAdministrator() || sender.IsCreator() {
-		reply := util.ReplyTo(message, strconv.FormatInt(message.Chat.ID, 10))
+		reply := util.ReplyTo(message, strconv.FormatInt(message.Chat.ID, 10), "")
 		_, err := ctx.TG.Send(reply)
 		return err
 	}

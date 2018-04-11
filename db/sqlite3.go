@@ -141,6 +141,59 @@ func (dr *sqlite3) WarnAdd(chat_id int64, user_id int) (err error) {
 	return nil
 }
 
+func (dr *sqlite3) WarnSet(chat_id int64, user_id, count int) (err error) {
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
+
+	tx, err := dr.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
+	
+	updateStmt, err := tx.Prepare(`
+	UPDATE warnings SET count = ? WHERE chat_id = ? AND user_id = ?
+	`)
+	if err != nil {
+		return err
+	}
+	
+	updateResult, err := updateStmt.Exec(count, chat_id, user_id)
+	if err != nil {
+		return err
+	}
+	
+	rowCount, err := updateResult.RowsAffected()
+	if err != nil {
+		return err
+	}
+	
+	if rowCount == 0 {
+		insertStmt, err := tx.Prepare(`
+		INSERT INTO warnings (chat_id, user_id, count) VALUES (?, ?, ?)
+		`)
+		if err != nil {
+			return err
+		}
+
+		_, err = insertStmt.Exec(chat_id, user_id, count)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+	
+	return nil
+}
+
 func (dr *sqlite3) WarnCount(chat_id int64, user_id int) (int, error) {
 	dr.mu.RLock()
 	defer dr.mu.RUnlock()
@@ -178,7 +231,7 @@ func (dr *sqlite3) WarnMax(chat_id int64) (int, error) {
 	return maxWarn, nil
 }
 
-func (dr *sqlite3) WarnSet(chat_id int64, count int) (err error) {
+func (dr *sqlite3) WarnMaxSet(chat_id int64, count int) (err error) {
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
 

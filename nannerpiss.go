@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/command"
 	"github.com/NANNERPISS/NANNERPISS/context"
@@ -30,15 +31,28 @@ func (b *bot) Run() {
 	for update := range updates {
 		go (func(update tgbotapi.Update) {
 			var message *tgbotapi.Message
-			if message = update.Message; message == nil {
-				if message = update.EditedMessage; message == nil {
-					// No usable message
-					return
-				}
+			if update.Message != nil {
+				message = update.Message
+			} else if update.EditedMessage != nil {
+				message = update.EditedMessage
+			} else {
+				// No usable message
+				return
 			}
+			
 			if !message.Chat.IsGroup() && !message.Chat.IsSuperGroup() {
 				return
 			}
+			
+			if message.Text == "" && message.Caption != "" && message.Entities == nil {
+				message.Text = message.Caption
+				if strings.HasPrefix(message.Caption, "/") {
+					c := strings.SplitN(message.Caption, " ", 2)[0]
+					e := tgbotapi.MessageEntity{Type: "bot_command", Offset: 0, Length: len(c)}
+					message.Entities = &[]tgbotapi.MessageEntity{e}
+				}
+			}
+			
 			if message.IsCommand() {
 				cmdName := message.Command()
 				cmd, ok := command.Get(cmdName)
@@ -61,7 +75,7 @@ func (b *bot) Run() {
 				})(b.Context, h, message)
 			}
 
-			fmt.Printf("[%s] %s\n", message.From.UserName, message.Text)
+			fmt.Printf("[%d][%s] %s\n", message.Chat.ID, message.From.UserName, message.Text)
 		})(update)
 	}
 }

@@ -21,9 +21,9 @@ func FormatUser(user *tgbotapi.User) (string, error) {
 	return response.String(), nil
 }
 
-func ReplyTo(message *tgbotapi.Message, response string) *tgbotapi.MessageConfig {
+func ReplyTo(message *tgbotapi.Message, response, parseMode string) *tgbotapi.MessageConfig {
 	reply := tgbotapi.NewMessage(message.Chat.ID, response)
-	reply.ParseMode = "HTML"
+	reply.ParseMode = parseMode
 	reply.ReplyToMessageID = message.MessageID
 	return &reply
 }
