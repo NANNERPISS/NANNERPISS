@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
@@ -66,6 +67,33 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 				media = &m
 			}
 			
+			var replyID string
+			if v := message.CommandWithAt(); strings.Contains(v, "@") {
+				replyID = strings.SplitN(v, "@", 2)[1]
+			} else {
+				if message.ReplyToMessage != nil && message.ReplyToMessage.Entities != nil {
+					var urlString string
+					for _, e := range *message.ReplyToMessage.Entities {
+						if e.Type == "url" {
+							urlString = message.ReplyToMessage.Text[e.Offset:e.Offset+e.Length]
+						}
+					}
+					
+					if urlString != "" {
+						replyURL, err := url.Parse(urlString)
+						if err != nil {
+							return err
+						}
+						if replyURL.Host == "twitter.com" && len(replyURL.Path) > 8 {
+							splitURL := strings.Split(replyURL.Path, "/")
+							if splitURL[2] == "status" {
+								replyID = splitURL[3]
+							}
+						}
+					}
+				}
+			}
+			
 			if media == nil && status == "" {
 				reply := util.ReplyTo(message, "Please include a message to tweet", "")
 				_, err = ctx.TG.Send(reply)
@@ -76,6 +104,11 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 			
 			if media != nil {
 				values.Add("media_ids", media.MediaIDString)
+			}
+			
+			if replyID != "" {
+				values.Add("in_reply_to_status_id", replyID)
+				values.Add("auto_populate_reply_metadata", "true")
 			}
 			
 			values.Add("lat", "61.1940413")
