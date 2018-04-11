@@ -2,6 +2,7 @@ package command
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -18,6 +19,23 @@ import (
 func init() {
 	Register("tweet", Tweet)
 }
+
+func getTweetID(url string) (string, error) {
+	replyURL, err := url.Parse(url)
+	if err != nil {
+		return "", err
+	}
+	if replyURL.Host == "twitter.com" && len(replyURL.Path) > 8 {
+		splitURL := strings.Split(replyURL.Path, "/")
+		if splitURL[2] == "status" {
+			return splitURL[3]
+		}
+	}
+	
+	return "", fmt.Errorf("Couldn't extract ID from link")
+}
+
+func ReTweet
 
 func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	if message.Chat.ID == ctx.Config.TW.ControlGroup {
@@ -80,15 +98,9 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 					}
 					
 					if urlString != "" {
-						replyURL, err := url.Parse(urlString)
+						replyID, err = getTweetID(urlString)
 						if err != nil {
 							return err
-						}
-						if replyURL.Host == "twitter.com" && len(replyURL.Path) > 8 {
-							splitURL := strings.Split(replyURL.Path, "/")
-							if splitURL[2] == "status" {
-								replyID = splitURL[3]
-							}
 						}
 					}
 				}
