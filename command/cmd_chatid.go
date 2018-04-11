@@ -10,20 +10,11 @@ import (
 )
 
 func init() {
-	Register("chatid", ChatID)
+	Register("chatid", Admin(ChatID))
 }
 
 func ChatID(ctx *context.Context, message *tgbotapi.Message) error {
-	sender, err := util.GetSender(ctx.TG, message)
-	if err != nil {
-		return err
-	}
-
-	if sender.IsAdministrator() || sender.IsCreator() {
-		reply := util.ReplyTo(message, strconv.FormatInt(message.Chat.ID, 10), "")
-		_, err := ctx.TG.Send(reply)
-		return err
-	}
-
-	return nil
+	reply := util.ReplyTo(message, strconv.FormatInt(message.Chat.ID, 10), "")
+	_, err := ctx.TG.Send(reply)
+	return err
 }

@@ -10,48 +10,38 @@ import (
 )
 
 func init() {
-	Register("ban", Kick)
-	Register("kick", Kick)
+	Register("ban", Admin(Kick))
+	Register("kick", Admin(Kick))
 }
 
 func Kick(ctx *context.Context, message *tgbotapi.Message) error {
-	sender, err := util.GetSender(ctx.TG, message)
+	if message.ReplyToMessage == nil {
+		reply := util.ReplyTo(message, "Please respond to the user you want to kick", "")
+		_, err := ctx.TG.Send(reply)
+		return err
+	}
+	
+	id := message.ReplyToMessage.From.ID
+
+	chatMemberConfig := tgbotapi.ChatMemberConfig{ChatID: message.Chat.ID, UserID: id}
+	chatMember, err := ctx.TG.GetChatMember(tgbotapi.ChatConfigWithUser{ChatID: message.Chat.ID, UserID: id})
 	if err != nil {
 		return err
 	}
-
-	if sender.IsAdministrator() || sender.IsCreator() {
-		var kickUserIDs []int
-		if message.ReplyToMessage != nil {
-			kickUserIDs = append(kickUserIDs, message.ReplyToMessage.From.ID)
-		}
-
-		// TODO: Apparently there's no way to get the user ID of an @'d user without storing them client side,
-		// so only works with replies for now
-		for _, id := range kickUserIDs {
-			chatMemberConfig := tgbotapi.ChatMemberConfig{ChatID: message.Chat.ID, UserID: id}
-			chatMember, err := ctx.TG.GetChatMember(tgbotapi.ChatConfigWithUser{ChatID: message.Chat.ID, UserID: id})
-			if err != nil {
-				return err
-			}
-			userStr, err := util.FormatUser(chatMember.User)
-			if err != nil {
-				return err
-			}
-			resp, err := ctx.TG.KickChatMember(tgbotapi.KickChatMemberConfig{ChatMemberConfig: chatMemberConfig})
-			if !resp.Ok {
-				response := fmt.Sprintf("Sorry, I can't kick %s", userStr)
-				reply := util.ReplyTo(message, response, "html")
-				_, err = ctx.TG.Send(reply)
-				return err
-			}
-
-			response := fmt.Sprintf("Kicked %s", userStr)
-			reply := util.ReplyTo(message, response, "html")
-			_, err = ctx.TG.Send(reply)
-			return err
-		}
+	userStr, err := util.FormatUser(chatMember.User)
+	if err != nil {
+		return err
 	}
-
-	return nil
+	resp, err := ctx.TG.KickChatMember(tgbotapi.KickChatMemberConfig{ChatMemberConfig: chatMemberConfig})
+	if !resp.Ok {
+		response := fmt.Sprintf("Sorry, I can't kick %s", userStr)
+		reply := util.ReplyTo(message, response, "html")
+		_, err = ctx.TG.Send(reply)
+		return err
+	}
+	
+	response := fmt.Sprintf("Kicked %s", userStr)
+	reply := util.ReplyTo(message, response, "html")
+	_, err = ctx.TG.Send(reply)
+	return err
 }

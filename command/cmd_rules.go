@@ -11,7 +11,7 @@ import (
 
 func init() {
 	Register("rules", Rules)
-	Register("rulesset", RulesSet)
+	Register("rulesset", Admin(RulesSet))
 }
 
 func Rules(ctx *context.Context, message *tgbotapi.Message) error {
@@ -27,25 +27,20 @@ func Rules(ctx *context.Context, message *tgbotapi.Message) error {
 }
 
 func RulesSet(ctx *context.Context, message *tgbotapi.Message) error {
-	if args := message.CommandArguments(); args != "" {
-		sender, err := util.GetSender(ctx.TG, message)
-		if err != nil {
-			return err
-		}
-
-		if sender.IsAdministrator() || sender.IsCreator() {
-			err = ctx.DB.RulesSet(message.Chat.ID, args)
-			if err != nil {
-				return err
-			}
-
-			response := fmt.Sprintf(`<b>Rules have been updated</b>`)
-			reply := util.ReplyTo(message, response, "HTML")
-			_, err = ctx.TG.Send(reply)
-
-			return err
-		}
+	var args string
+	if args = message.CommandArguments(); args == "" {
+		reply := util.ReplyTo(message, "Rules cannot be blank", "")
+		_, err := ctx.TG.Send(reply)
+		return err
 	}
-
-	return nil
+	
+	err := ctx.DB.RulesSet(message.Chat.ID, args)
+	if err != nil {
+		return err
+	}
+	
+	response := fmt.Sprintf(`<b>Rules have been updated</b>`)
+	reply := util.ReplyTo(message, response, "HTML")
+	_, err = ctx.TG.Send(reply)
+	return err
 }

@@ -12,34 +12,30 @@ import (
 )
 
 func init() {
-	Register("chatinfo", ChatInfo)
+	Register("chatinfo", Admin(ChatInfo))
 }
 
 func ChatInfo(ctx *context.Context, message *tgbotapi.Message) error {
-	if message.Chat.ID == ctx.Config.TG.ControlGroup {
-		sender, err := util.GetSender(ctx.TG, message)
-		if err != nil {
-			return err
-		}
-
-		if sender.IsAdministrator() || sender.IsCreator() {
-			if args := message.CommandArguments(); args != "" {
-				chatID, err := strconv.ParseInt(args, 10, 64)
-				if err != nil {
-					return err
-				}
-				chat, err := ctx.TG.GetChat(tgbotapi.ChatConfig{ChatID: chatID})
-				if err != nil {
-					return err
-				}
-				chatInfoString := spew.Sdump(chat)
-				fmt.Printf(chatInfoString)
-				reply := util.ReplyTo(message, chatInfoString, "")
-				_, err = ctx.TG.Send(reply)
-				return err
-			}
-		}
+	if message.Chat.ID != ctx.Config.TG.ControlGroup {
+		return nil
 	}
-
-	return nil
+	
+	var args string
+	if args = message.CommandArguments(); args == "" {
+		return nil
+	}
+	
+	chatID, err := strconv.ParseInt(args, 10, 64)
+	if err != nil {
+		return err
+	}
+	chat, err := ctx.TG.GetChat(tgbotapi.ChatConfig{ChatID: chatID})
+	if err != nil {
+		return err
+	}
+	chatInfoString := spew.Sdump(chat)
+	fmt.Printf(chatInfoString)
+	reply := util.ReplyTo(message, chatInfoString, "")
+	_, err = ctx.TG.Send(reply)
+	return err
 }
