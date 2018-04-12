@@ -2,11 +2,11 @@ package command
 
 import (
 	"encoding/base64"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
+	"strconv"
 	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
@@ -18,21 +18,79 @@ import (
 
 func init() {
 	Register("tweet", Admin(Tweet))
+	Register("retweet", Admin(ReTweet))
 }
 
-func getTweetID(urlStr string) (string, error) {
+func getTweetID(urlStr string) string {
 	replyURL, err := url.Parse(urlStr)
 	if err != nil {
-		return "", err
+		return ""
 	}
 	if replyURL.Host == "twitter.com" && len(replyURL.Path) > 8 {
 		splitURL := strings.Split(replyURL.Path, "/")
 		if splitURL[2] == "status" {
-			return splitURL[3], nil
+			return splitURL[3]
 		}
 	}
 	
-	return "", fmt.Errorf("Couldn't extract ID from link")
+	return ""
+}
+
+func extractURL(message *tgbotapi.Message) string {
+	if message.Entities == nil {
+		return ""
+	}
+	
+	for _, e := range *message.Entities {
+		if e.Type == "url" {
+			return message.Text[e.Offset:e.Offset+e.Length]
+		}
+	}
+	
+	return ""
+}
+
+func ReTweet(ctx *context.Context, message *tgbotapi.Message) error {
+	if message.Chat.ID != ctx.Config.TW.ControlGroup {
+		return nil
+	}
+	
+	var retweetID string
+	if v := message.CommandWithAt(); strings.Contains(v, "@") {
+		retweetID = strings.SplitN(v, "@", 2)[1]
+	} else if message.ReplyToMessage != nil {
+		urlString := extractURL(message.ReplyToMessage)
+		
+		if urlString != "" {
+			retweetID = getTweetID(urlString)
+		}
+	} else if message.CommandArguments() != "" {
+		urlString := extractURL(message)
+		
+		if urlString != "" {
+			retweetID = getTweetID(urlString)
+		}
+	}
+	
+	if retweetID == "" {
+		reply := util.ReplyTo(message, "Please include the tweet you want to reweet by using <code>/retweet@&lt;tweetID&gt;</code> or replying to a mesage with a twitter link with <code>/retweet</code>", "html")
+		_, err := ctx.TG.Send(reply)
+		return err
+	}
+	
+	retweetIDInt64, err := strconv.ParseInt(retweetID, 10, 64)
+	if err != nil {
+		return err
+	}
+	
+	t, err := ctx.TW.Retweet(retweetIDInt64, false)
+	if err != nil {
+		return err
+	}
+	
+	reply := util.ReplyTo(message, "https://twitter.com/" + t.User.ScreenName + "/status/" + t.IdStr, "")
+	_, err = ctx.TG.Send(reply)
+	return err
 }
 
 func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
@@ -43,8 +101,15 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	status := message.CommandArguments()
 	var media *anaconda.Media
 	
-	if message.Photo != nil && len(*message.Photo)!= 0 {
-		fileID := (*message.Photo)[len(*message.Photo)-1].FileID
+	var photo *[]tgbotapi.PhotoSize
+	if message.Photo != nil {
+		photo = message.Photo
+	} else if message.ReplyToMessage != nil && message.ReplyToMessage.Photo != nil {
+		photo = message.ReplyToMessage.Photo
+	}
+	
+	if photo != nil && len(*photo)!= 0 {
+		fileID := (*photo)[len(*photo)-1].FileID
 		
 		downloadURL, err := ctx.TG.GetFileDirectURL(fileID)
 		if err != nil {
@@ -93,11 +158,7 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 			}
 			
 			if urlString != "" {
-				var err error
-				replyID, err = getTweetID(urlString)
-				if err != nil {
-					return err
-				}
+				replyID = getTweetID(urlString)
 			}
 		}
 	}
@@ -128,7 +189,7 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 		return err
 	}
 	
-	reply := util.ReplyTo(message, "https://twitter.com/NANNERPISS/status/" + t.IdStr, "")
+	reply := util.ReplyTo(message, "https://twitter.com/" + t.User.ScreenName + "/status/" + t.IdStr, "")
 	_, err = ctx.TG.Send(reply)
 	return err
 }
