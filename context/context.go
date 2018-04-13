@@ -10,6 +10,8 @@ import (
 	"github.com/ChimeraCoder/anaconda"
 )
 
+type BotFunc func(*Context, *tgbotapi.Message) error
+
 type Context struct {
 	Config *config.Config
 	DB     db.DB

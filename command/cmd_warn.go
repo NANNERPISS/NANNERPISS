@@ -5,14 +5,15 @@ import (
 	"strconv"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
 
 func init() {
-	Register("warn", Admin(Warn))
-	Register("warnmaxset", Admin(WarnMaxSet))
+	Register("warn", middleware.Admin(Warn))
+	Register("warnmaxset", middleware.Admin(WarnMaxSet))
 }
 
 func Warn(ctx *context.Context, message *tgbotapi.Message) error {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
@@ -11,7 +12,7 @@ import (
 
 func init() {
 	Register("rules", Rules)
-	Register("rulesset", Admin(RulesSet))
+	Register("rulesset", middleware.Admin(RulesSet))
 }
 
 func Rules(ctx *context.Context, message *tgbotapi.Message) error {

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"github.com/davecgh/go-spew/spew"
@@ -12,7 +13,7 @@ import (
 )
 
 func init() {
-	Register("chatinfo", Admin(ChatInfo))
+	Register("chatinfo", middleware.Admin(ChatInfo))
 }
 
 func ChatInfo(ctx *context.Context, message *tgbotapi.Message) error {

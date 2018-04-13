@@ -4,18 +4,14 @@ import (
 	"sync"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
-
-	"gopkg.in/telegram-bot-api.v4"
 )
-
-type cmdFunc func(*context.Context, *tgbotapi.Message) error
 
 var (
 	cmdsMu sync.RWMutex
-	cmds   = make(map[string]cmdFunc)
+	cmds   = make(map[string]context.BotFunc)
 )
 
-func Register(name string, function cmdFunc) {
+func Register(name string, function context.BotFunc) {
 	cmdsMu.Lock()
 	defer cmdsMu.Unlock()
 	if _, dup := cmds[name]; dup {
@@ -24,7 +20,7 @@ func Register(name string, function cmdFunc) {
 	cmds[name] = function
 }
 
-func Get(name string) (cmdFunc, bool) {
+func Get(name string) (context.BotFunc, bool) {
 	cmdsMu.RLock()
 	defer cmdsMu.RUnlock()
 	cmd, ok := cmds[name]

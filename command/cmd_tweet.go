@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
@@ -17,8 +18,8 @@ import (
 )
 
 func init() {
-	Register("tweet", Admin(Tweet))
-	Register("retweet", Admin(ReTweet))
+	Register("tweet", middleware.Admin(Tweet))
+	Register("retweet", middleware.Admin(ReTweet))
 }
 
 func getTweetID(urlStr string) string {
@@ -85,6 +86,11 @@ func ReTweet(ctx *context.Context, message *tgbotapi.Message) error {
 	
 	t, err := ctx.TW.Retweet(retweetIDInt64, false)
 	if err != nil {
+		if terr, ok := err.(*anaconda.ApiError); ok {
+			reply := util.ReplyTo(message, terr.Decoded.Error(), "")
+			_, err = ctx.TG.Send(reply)
+			return err
+		}
 		return err
 	}
 	
@@ -101,16 +107,30 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	status := message.CommandArguments()
 	var media *anaconda.Media
 	
-	var photo *[]tgbotapi.PhotoSize
-	if message.Photo != nil {
-		photo = message.Photo
-	} else if message.ReplyToMessage != nil && message.ReplyToMessage.Photo != nil {
-		photo = message.ReplyToMessage.Photo
+	var fileID string
+	switch {
+	case message.Photo != nil && len(*message.Photo) != 0:
+		fileID = (*message.Photo)[len(*message.Photo)-1].FileID
+	case message.Document != nil:
+		switch message.Document.MimeType {
+		case "image/jpeg", "image/png", "image/gif":
+			fileID = message.Document.FileID
+		}
+	case message.ReplyToMessage != nil:
+		switch {
+		case message.ReplyToMessage.Photo != nil && len(*message.ReplyToMessage.Photo) != 0:
+			fileID = (*message.ReplyToMessage.Photo)[len(*message.ReplyToMessage.Photo)-1].FileID
+		case message.ReplyToMessage.Document != nil:
+			switch message.ReplyToMessage.Document.MimeType {
+			case "image/jpeg", "image/png", "image/gif":
+				fileID = message.ReplyToMessage.Document.FileID
+			}
+		case message.ReplyToMessage.Sticker != nil:
+			fileID = message.ReplyToMessage.Sticker.FileID
+		}
 	}
 	
-	if photo != nil && len(*photo)!= 0 {
-		fileID := (*photo)[len(*photo)-1].FileID
-		
+	if fileID != "" {
 		downloadURL, err := ctx.TG.GetFileDirectURL(fileID)
 		if err != nil {
 			return err
@@ -164,9 +184,13 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	}
 	
 	if media == nil && status == "" {
-		reply := util.ReplyTo(message, "Please include a message to tweet", "")
-		_, err := ctx.TG.Send(reply)
-		return err
+		if message.ReplyToMessage != nil && message.ReplyToMessage.Text != "" {
+			status = message.ReplyToMessage.Text
+		} else {
+			reply := util.ReplyTo(message, "Please include a message to tweet", "")
+			_, err := ctx.TG.Send(reply)
+			return err
+		}
 	}
 	
 	values := url.Values{}
@@ -186,6 +210,11 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	
 	t, err := ctx.TW.PostTweet(status, values)
 	if err != nil {
+		if terr, ok := err.(*anaconda.ApiError); ok {
+			reply := util.ReplyTo(message, terr.Decoded.Error(), "")
+			_, err = ctx.TG.Send(reply)
+			return err
+		}
 		return err
 	}
 	

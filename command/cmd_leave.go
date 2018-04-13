@@ -4,13 +4,14 @@ import (
 	"strconv"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
 
 func init() {
-	Register("leave", Admin(Leave))
+	Register("leave", middleware.Admin(Leave))
 }
 
 func Leave(ctx *context.Context, message *tgbotapi.Message) error {

@@ -8,6 +8,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/hook"
 
+	//"github.com/davecgh/go-spew/spew"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -43,6 +44,9 @@ func (b *bot) Run() {
 			if !message.Chat.IsGroup() && !message.Chat.IsSuperGroup() {
 				return
 			}
+			
+			//messageInfo := spew.Sdump(message)
+			//fmt.Printf(messageInfo)
 			
 			if message.Text == "" && message.Caption != "" && message.Entities == nil {
 				message.Text = message.Caption

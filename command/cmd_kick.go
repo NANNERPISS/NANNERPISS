@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
 
 func init() {
-	Register("ban", Admin(Kick))
-	Register("kick", Admin(Kick))
+	Register("ban", middleware.Admin(Kick))
+	Register("kick", middleware.Admin(Kick))
 }
 
 func Kick(ctx *context.Context, message *tgbotapi.Message) error {

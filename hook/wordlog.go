@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	vision "cloud.google.com/go/vision/apiv1"
@@ -44,28 +45,21 @@ func WordLog(ctx *context.Context, message *tgbotapi.Message) error {
 	}
 
 	if message.Chat.ID == ctx.Config.WL.ControlGroup {
-		sender, err := util.GetSender(ctx.TG, message)
-		if err != nil {
-			return err
-		}
-
-		if sender.IsAdministrator() || sender.IsCreator() {
-			if message.IsCommand() {
-				cmdName := message.Command()
-				switch cmdName {
-				case "whitelistadd":
-					err := WordLogWlAdd(ctx, message)
-					return err
-				case "whitelistdel":
-					err := WordLogWlDel(ctx, message)
-					return err
-				case "blacklistadd":
-					err := WordLogBlAdd(ctx, message)
-					return err
-				case "blacklistdel":
-					err := WordLogBlDel(ctx, message)
-					return err
-				}
+		if message.IsCommand() {
+			cmdName := message.Command()
+			switch cmdName {
+			case "whitelistadd":
+				err := middleware.Admin(WordLogWlAdd)(ctx, message)
+				return err
+			case "whitelistdel":
+				err := middleware.Admin(WordLogWlDel)(ctx, message)
+				return err
+			case "blacklistadd":
+				err := middleware.Admin(WordLogBlAdd)(ctx, message)
+				return err
+			case "blacklistdel":
+				err := middleware.Admin(WordLogBlDel)(ctx, message)
+				return err
 			}
 		}
 	}
