@@ -40,14 +40,14 @@ func (b *bot) Run() {
 				// No usable message
 				return
 			}
-			
+
 			if !message.Chat.IsGroup() && !message.Chat.IsSuperGroup() {
 				return
 			}
-			
+
 			//messageInfo := spew.Sdump(message)
 			//fmt.Printf(messageInfo)
-			
+
 			if message.Text == "" && message.Caption != "" && message.Entities == nil {
 				message.Text = message.Caption
 				if strings.HasPrefix(message.Caption, "/") {
@@ -56,7 +56,7 @@ func (b *bot) Run() {
 					message.Entities = &[]tgbotapi.MessageEntity{e}
 				}
 			}
-			
+
 			if message.IsCommand() {
 				cmdName := message.Command()
 				cmd, ok := command.Get(cmdName)

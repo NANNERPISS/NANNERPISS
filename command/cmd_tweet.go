@@ -10,16 +10,15 @@ import (
 	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
-	"github.com/NANNERPISS/NANNERPISS/middleware"
+	mw "github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
-	"github.com/ChimeraCoder/anaconda"
 )
 
 func init() {
-	Register("tweet", middleware.Admin(Tweet))
-	Register("retweet", middleware.Admin(ReTweet))
+	Register("tweet", mw.Admin(mw.TweetError(Tweet)))
+	Register("retweet", mw.Admin(mw.TweetError(ReTweet)))
 }
 
 func getTweetID(urlStr string) string {
@@ -86,11 +85,6 @@ func ReTweet(ctx *context.Context, message *tgbotapi.Message) error {
 	
 	t, err := ctx.TW.Retweet(retweetIDInt64, false)
 	if err != nil {
-		if terr, ok := err.(*anaconda.ApiError); ok {
-			reply := util.ReplyTo(message, terr.Decoded.Error(), "")
-			_, err = ctx.TG.Send(reply)
-			return err
-		}
 		return err
 	}
 	
@@ -105,28 +99,41 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	}
 	
 	status := message.CommandArguments()
-	var media *anaconda.Media
+	var mediaID string
 	
+	var isVideo bool
 	var fileID string
+	var fileSize int
 	switch {
 	case message.Photo != nil && len(*message.Photo) != 0:
 		fileID = (*message.Photo)[len(*message.Photo)-1].FileID
+		fileSize = (*message.Photo)[len(*message.Photo)-1].FileSize
 	case message.Document != nil:
 		switch message.Document.MimeType {
+		case "video/mp4":
+			isVideo = true
+			fallthrough
 		case "image/jpeg", "image/png", "image/gif":
 			fileID = message.Document.FileID
+			fileSize = message.Document.FileSize
 		}
 	case message.ReplyToMessage != nil:
 		switch {
 		case message.ReplyToMessage.Photo != nil && len(*message.ReplyToMessage.Photo) != 0:
 			fileID = (*message.ReplyToMessage.Photo)[len(*message.ReplyToMessage.Photo)-1].FileID
+			fileSize = (*message.ReplyToMessage.Photo)[len(*message.ReplyToMessage.Photo)-1].FileSize
 		case message.ReplyToMessage.Document != nil:
 			switch message.ReplyToMessage.Document.MimeType {
+			case "video/mp4":
+				isVideo = true
+				fallthrough
 			case "image/jpeg", "image/png", "image/gif":
 				fileID = message.ReplyToMessage.Document.FileID
+				fileSize = message.ReplyToMessage.Document.FileSize
 			}
 		case message.ReplyToMessage.Sticker != nil:
 			fileID = message.ReplyToMessage.Sticker.FileID
+			fileSize = message.ReplyToMessage.Sticker.FileSize
 		}
 	}
 	
@@ -136,8 +143,9 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 			return err
 		}
 		
-		client := &http.Client{}
-		client.Timeout = time.Second * 30
+		client := &http.Client{
+			Timeout: time.Second * 30,
+		}
 		
 		req, err := http.NewRequest("GET", downloadURL, nil)
 		if err != nil {
@@ -157,12 +165,31 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 		
 		imgb64 := base64.StdEncoding.EncodeToString(img)
 		
-		m, err := ctx.TW.UploadMedia(imgb64)
-		if err != nil {
-			return err
+		if isVideo {
+			chunked, err := ctx.TW.UploadVideoInit(fileSize, "video/mp4")
+			if err != nil {
+				return err
+			}
+			
+			err = ctx.TW.UploadVideoAppend(chunked.MediaIDString, 0, imgb64)
+			if err != nil {
+				return err
+			}
+			
+			video, err := ctx.TW.UploadVideoFinalize(chunked.MediaIDString)
+			if err != nil {
+				return err
+			}
+			
+			mediaID = video.MediaIDString
+		} else {
+			m, err := ctx.TW.UploadMedia(imgb64)
+			if err != nil {
+				return err
+			}
+			
+			mediaID = m.MediaIDString
 		}
-		
-		media = &m
 	}
 	
 	var replyID string
@@ -183,7 +210,7 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 		}
 	}
 	
-	if media == nil && status == "" {
+	if mediaID == "" && status == "" {
 		if message.ReplyToMessage != nil && message.ReplyToMessage.Text != "" {
 			status = message.ReplyToMessage.Text
 		} else {
@@ -195,8 +222,8 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	
 	values := url.Values{}
 	
-	if media != nil {
-		values.Add("media_ids", media.MediaIDString)
+	if mediaID != "" {
+		values.Add("media_ids", mediaID)
 	}
 	
 	if replyID != "" {
@@ -210,11 +237,6 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 	
 	t, err := ctx.TW.PostTweet(status, values)
 	if err != nil {
-		if terr, ok := err.(*anaconda.ApiError); ok {
-			reply := util.ReplyTo(message, terr.Decoded.Error(), "")
-			_, err = ctx.TG.Send(reply)
-			return err
-		}
 		return err
 	}
 	
