@@ -34,12 +34,12 @@ func RulesSet(ctx *context.Context, message *tgbotapi.Message) error {
 		_, err := ctx.TG.Send(reply)
 		return err
 	}
-	
+
 	err := ctx.DB.RulesSet(message.Chat.ID, args)
 	if err != nil {
 		return err
 	}
-	
+
 	response := fmt.Sprintf(`<b>Rules have been updated</b>`)
 	reply := util.ReplyTo(message, response, "HTML")
 	_, err = ctx.TG.Send(reply)

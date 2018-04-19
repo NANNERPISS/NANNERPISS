@@ -157,24 +157,24 @@ func (dr *sqlite3) WarnSet(chat_id int64, user_id, count int) (err error) {
 		}
 		err = tx.Commit()
 	}()
-	
+
 	updateStmt, err := tx.Prepare(`
 	UPDATE warnings SET count = ? WHERE chat_id = ? AND user_id = ?
 	`)
 	if err != nil {
 		return err
 	}
-	
+
 	updateResult, err := updateStmt.Exec(count, chat_id, user_id)
 	if err != nil {
 		return err
 	}
-	
+
 	rowCount, err := updateResult.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if rowCount == 0 {
 		insertStmt, err := tx.Prepare(`
 		INSERT INTO warnings (chat_id, user_id, count) VALUES (?, ?, ?)
@@ -190,7 +190,7 @@ func (dr *sqlite3) WarnSet(chat_id int64, user_id, count int) (err error) {
 
 		return nil
 	}
-	
+
 	return nil
 }
 

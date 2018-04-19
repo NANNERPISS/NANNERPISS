@@ -52,7 +52,7 @@ func AttrKey(key string) NodeFilter {
 				return true
 			}
 		}
-		
+
 		return false
 	}
 }

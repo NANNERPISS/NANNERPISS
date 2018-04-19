@@ -21,7 +21,7 @@ func Kick(ctx *context.Context, message *tgbotapi.Message) error {
 		_, err := ctx.TG.Send(reply)
 		return err
 	}
-	
+
 	id := message.ReplyToMessage.From.ID
 
 	chatMemberConfig := tgbotapi.ChatMemberConfig{ChatID: message.Chat.ID, UserID: id}
@@ -40,7 +40,7 @@ func Kick(ctx *context.Context, message *tgbotapi.Message) error {
 		_, err = ctx.TG.Send(reply)
 		return err
 	}
-	
+
 	response := fmt.Sprintf("Kicked %s", userStr)
 	reply := util.ReplyTo(message, response, "html")
 	_, err = ctx.TG.Send(reply)

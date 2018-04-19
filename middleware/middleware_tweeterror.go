@@ -3,9 +3,9 @@ package middleware
 import (
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/util"
-	
-	"gopkg.in/telegram-bot-api.v4"
+
 	"github.com/ChimeraCoder/anaconda"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 func TweetError(cmd context.BotFunc) context.BotFunc {
@@ -15,7 +15,7 @@ func TweetError(cmd context.BotFunc) context.BotFunc {
 			reply := util.ReplyTo(message, terr.Decoded.Error(), "")
 			_, err = ctx.TG.Send(reply)
 		}
-		
+
 		return err
 	}
 }

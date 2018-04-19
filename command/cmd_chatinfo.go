@@ -20,12 +20,12 @@ func ChatInfo(ctx *context.Context, message *tgbotapi.Message) error {
 	if message.Chat.ID != ctx.Config.TG.ControlGroup {
 		return nil
 	}
-	
+
 	var args string
 	if args = message.CommandArguments(); args == "" {
 		return nil
 	}
-	
+
 	chatID, err := strconv.ParseInt(args, 10, 64)
 	if err != nil {
 		return err
