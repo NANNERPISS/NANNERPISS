@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -14,7 +13,6 @@ const (
 
 type sqlite3 struct {
 	db *sql.DB
-	mu sync.RWMutex
 }
 type sqlite3Factory struct{}
 
@@ -30,9 +28,7 @@ func (f *sqlite3Factory) New(source string) (DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	driver.mu.Lock()
-	defer driver.mu.Unlock()
+	driver.db.SetMaxOpenConns(1)
 
 	_, err = driver.db.Exec(`
 	CREATE TABLE IF NOT EXISTS warnings (
@@ -89,9 +85,6 @@ func (f *sqlite3Factory) New(source string) (DB, error) {
 }
 
 func (dr *sqlite3) WarnAdd(chat_id int64, user_id int) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -142,9 +135,6 @@ func (dr *sqlite3) WarnAdd(chat_id int64, user_id int) (err error) {
 }
 
 func (dr *sqlite3) WarnSet(chat_id int64, user_id, count int) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -195,9 +185,6 @@ func (dr *sqlite3) WarnSet(chat_id int64, user_id, count int) (err error) {
 }
 
 func (dr *sqlite3) WarnCount(chat_id int64, user_id int) (int, error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
-
 	row := dr.db.QueryRow(`
 	SELECT count FROM warnings WHERE chat_id = ? AND user_id = ?
 	`, chat_id, user_id)
@@ -212,9 +199,6 @@ func (dr *sqlite3) WarnCount(chat_id int64, user_id int) (int, error) {
 }
 
 func (dr *sqlite3) WarnMax(chat_id int64) (int, error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
-
 	row := dr.db.QueryRow(`
 	SELECT max_warn FROM settings WHERE chat_id = ?
 	`, chat_id)
@@ -232,9 +216,6 @@ func (dr *sqlite3) WarnMax(chat_id int64) (int, error) {
 }
 
 func (dr *sqlite3) WarnMaxSet(chat_id int64, count int) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -264,9 +245,6 @@ func (dr *sqlite3) WarnMaxSet(chat_id int64, count int) (err error) {
 }
 
 func (dr *sqlite3) WordLogWlGet() ([]string, error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
-
 	rows, err := dr.db.Query(`
 	SELECT word FROM word_whitelist
 	`)
@@ -293,9 +271,6 @@ func (dr *sqlite3) WordLogWlGet() ([]string, error) {
 }
 
 func (dr *sqlite3) WordLogBlGet() ([]string, error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
-
 	rows, err := dr.db.Query(`
 	SELECT word FROM word_blacklist
 	`)
@@ -322,9 +297,6 @@ func (dr *sqlite3) WordLogBlGet() ([]string, error) {
 }
 
 func (dr *sqlite3) WordLogWlAdd(word string) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -354,9 +326,6 @@ func (dr *sqlite3) WordLogWlAdd(word string) (err error) {
 }
 
 func (dr *sqlite3) WordLogWlDel(word string) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -386,9 +355,6 @@ func (dr *sqlite3) WordLogWlDel(word string) (err error) {
 }
 
 func (dr *sqlite3) WordLogBlAdd(word string) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -418,9 +384,6 @@ func (dr *sqlite3) WordLogBlAdd(word string) (err error) {
 }
 
 func (dr *sqlite3) WordLogBlDel(word string) (err error) {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
@@ -450,9 +413,6 @@ func (dr *sqlite3) WordLogBlDel(word string) (err error) {
 }
 
 func (dr *sqlite3) RulesGet(chat_id int64) (string, error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
-
 	row := dr.db.QueryRow(`
 	SELECT rules FROM rules WHERE chat_id = ?
 	`, chat_id)
@@ -470,9 +430,6 @@ func (dr *sqlite3) RulesGet(chat_id int64) (string, error) {
 }
 
 func (dr *sqlite3) RulesSet(chat_id int64, rules string) error {
-	dr.mu.Lock()
-	defer dr.mu.Unlock()
-
 	tx, err := dr.db.Begin()
 	if err != nil {
 		return err
