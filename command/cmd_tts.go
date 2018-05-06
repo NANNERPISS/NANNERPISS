@@ -22,16 +22,18 @@ func init() {
 const ttsAddress string = `https://tts.fed.bz/`
 
 func TTS(ctx *context.Context, message *tgbotapi.Message) error {
-	var args string
-	if args = message.CommandArguments(); args == "" {
-		reply := util.ReplyTo(message, "Please include a message to read. You can choose a voice with /tts@<Voice> <message>.", "")
+	var msg []string
+	if msg = strings.SplitN(message.Text, " ", 2); len(msg) != 2 {
+		reply := util.ReplyTo(message, "Please include a message to read.\nYou can choose a voice with /tts@<Voice> <message>.", "")
 		_, err := ctx.TG.Send(reply)
 		return err
 	}
 
+	args := msg[1]
+
 	var voice string
-	if v := message.CommandWithAt(); strings.Contains(v, "@") {
-		voice = strings.SplitN(v, "@", 2)[1]
+	if c := msg[0]; strings.Contains(c, "@") {
+		voice = strings.SplitN(c, "@", 2)[1]
 	} else {
 		voice = "Agnes"
 	}
