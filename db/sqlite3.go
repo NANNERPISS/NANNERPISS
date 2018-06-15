@@ -198,6 +198,29 @@ func (dr *sqlite3) WarnCount(chat_id int64, user_id int) (int, error) {
 	return count, nil
 }
 
+func (dr *sqlite3) WarnCountAll(chat_id int64) (map[int][]int, error) {
+	rows, err := dr.db.Query("SELECT user_id, count FROM warnings WHERE chat_id = ? ORDER BY count DESC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	warnList := make(map[int][]int)
+
+	for rows.Next() {
+		var user_id int
+		var count int
+		if err := rows.Scan(&user_id, &count); err != nil {
+			return nil, err
+		}
+		warnList[count] = append(warnList[count], user_id)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return warnList, nil
+}
+
 func (dr *sqlite3) WarnMax(chat_id int64) (int, error) {
 	row := dr.db.QueryRow(`
 	SELECT max_warn FROM settings WHERE chat_id = ?

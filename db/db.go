@@ -9,6 +9,7 @@ type DB interface {
 	WarnAdd(chat_id int64, user_id int) error
 	WarnSet(chat_id int64, user_id, count int) error
 	WarnCount(chat_id int64, user_id int) (int, error)
+	WarnCountAll(chat_id int64) (map[int][]int, error)
 	WarnMax(chat_id int64) (int, error)
 	WarnMaxSet(chat_id int64, count int) error
 	WordLogWlGet() ([]string, error)

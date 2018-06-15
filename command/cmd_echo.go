@@ -17,7 +17,7 @@ func Echo(ctx *context.Context, message *tgbotapi.Message) error {
 		return nil
 	}
 
-	reply := util.ReplyTo(message, args, "")
+	reply := util.ReplyTo(message, args, "HTML")
 	_, err := ctx.TG.Send(reply)
 	return err
 }

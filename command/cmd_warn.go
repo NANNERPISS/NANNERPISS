@@ -1,6 +1,7 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -14,6 +15,7 @@ import (
 func init() {
 	Register("warn", middleware.Admin(Warn))
 	Register("warnmaxset", middleware.Admin(WarnMaxSet))
+	Register("warnings", Warnings)
 }
 
 func Warn(ctx *context.Context, message *tgbotapi.Message) error {
@@ -85,5 +87,46 @@ func WarnMaxSet(ctx *context.Context, message *tgbotapi.Message) error {
 
 	reply := util.ReplyTo(message, fmt.Sprintf(`<b>Max Warning Count</b> has been set to <code>%d</code>`, parsedCount), "HTML")
 	_, err = ctx.TG.Send(reply)
+	return err
+}
+
+func Warnings(ctx *context.Context, message *tgbotapi.Message) error {
+	var replyMessage *tgbotapi.Message
+	if message.ReplyToMessage != nil {
+		replyMessage = message.ReplyToMessage
+	} else if message.From != nil {
+		replyMessage = message
+	} else {
+		reply := util.ReplyTo(message, "Please reply to the user whose warning count you want the see", "")
+		_, err := ctx.TG.Send(reply)
+		return err
+	}
+
+	warnCount, err := ctx.DB.WarnCount(message.Chat.ID, replyMessage.From.ID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return err
+		}
+		warnCount = 0
+	}
+
+	warnMax, err := ctx.DB.WarnMax(message.Chat.ID)
+	if err != nil {
+		return err
+	}
+
+	userStr, err := util.FormatUser(replyMessage.From)
+	if err != nil {
+		return err
+	}
+
+	plural := "s"
+	if warnCount == 1 {
+		plural = ""
+	}
+	warnMsg := fmt.Sprintf(`%s<b> currently has</b> <code>%d/%d</code> <b>warning%s</b>`, userStr, warnCount, warnMax, plural)
+	reply := util.ReplyTo(replyMessage, warnMsg, "HTML")
+	_, err = ctx.TG.Send(reply)
+
 	return err
 }
