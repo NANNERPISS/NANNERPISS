@@ -11,6 +11,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/context"
 	"github.com/NANNERPISS/NANNERPISS/middleware"
 	"github.com/NANNERPISS/NANNERPISS/util"
+	"golang.org/x/text/unicode/norm"
 
 	vision "cloud.google.com/go/vision/apiv1"
 	"google.golang.org/api/option"
@@ -138,6 +139,16 @@ func WordLogText(ctx *context.Context, message *tgbotapi.Message) (bool, error) 
 	}
 
 	blacklisted, err := containsBlacklist(ctx, messageText)
+	if err != nil {
+		return false, err
+	}
+	if blacklisted {
+		return true, nil
+	}
+
+	normMessageText := norm.NFKC.Bytes([]byte(messageText))
+
+	blacklisted, err = containsBlacklist(ctx, string(normMessageText[:]))
 
 	return blacklisted, err
 }
