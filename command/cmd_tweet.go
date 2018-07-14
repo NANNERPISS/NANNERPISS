@@ -117,6 +117,10 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 			fileID = message.Document.FileID
 			fileSize = message.Document.FileSize
 		}
+	case message.Video != nil:
+		isVideo = true
+		fileID = message.Video.FileID
+		fileSize = message.Video.FileSize
 	case message.ReplyToMessage != nil:
 		switch {
 		case message.ReplyToMessage.Photo != nil && len(*message.ReplyToMessage.Photo) != 0:
@@ -131,6 +135,10 @@ func Tweet(ctx *context.Context, message *tgbotapi.Message) error {
 				fileID = message.ReplyToMessage.Document.FileID
 				fileSize = message.ReplyToMessage.Document.FileSize
 			}
+		case message.ReplyToMessage.Video != nil:
+			isVideo = true
+			fileID = message.ReplyToMessage.Video.FileID
+			fileSize = message.ReplyToMessage.Video.FileSize
 		case message.ReplyToMessage.Sticker != nil:
 			fileID = message.ReplyToMessage.Sticker.FileID
 			fileSize = message.ReplyToMessage.Sticker.FileSize
