@@ -5,7 +5,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"github.com/ChimeraCoder/anaconda"
-	"gopkg.in/telegram-bot-api.v4"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func TweetError(cmd context.BotFunc) context.BotFunc {

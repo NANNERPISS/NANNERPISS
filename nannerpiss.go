@@ -9,7 +9,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/hook"
 
 	//"github.com/davecgh/go-spew/spew"
-	"gopkg.in/telegram-bot-api.v4"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type bot struct {

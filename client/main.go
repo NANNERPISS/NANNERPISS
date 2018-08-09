@@ -6,7 +6,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/db"
 
 	"github.com/ChimeraCoder/anaconda"
-	"gopkg.in/telegram-bot-api.v4"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func main() {

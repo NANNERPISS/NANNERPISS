@@ -12,7 +12,7 @@ import (
 	"github.com/NANNERPISS/NANNERPISS/util/parse"
 	"github.com/NANNERPISS/NANNERPISS/util/parse/filter"
 
-	"gopkg.in/telegram-bot-api.v4"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func init() {

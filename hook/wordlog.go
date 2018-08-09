@@ -14,8 +14,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	vision "cloud.google.com/go/vision/apiv1"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"google.golang.org/api/option"
-	"gopkg.in/telegram-bot-api.v4"
 )
 
 func init() {
