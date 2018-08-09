@@ -2,7 +2,6 @@ package command
 
 import (
 	"github.com/NANNERPISS/NANNERPISS/context"
-	"github.com/NANNERPISS/NANNERPISS/util"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
@@ -17,7 +16,7 @@ func Echo(ctx *context.Context, message *tgbotapi.Message) error {
 		return nil
 	}
 
-	reply := util.ReplyTo(message, args, "HTML")
+	reply := tgbotapi.NewMessage(message.Chat.ID, message.Text)
 	_, err := ctx.TG.Send(reply)
 	return err
 }
