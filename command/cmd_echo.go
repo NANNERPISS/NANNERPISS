@@ -16,7 +16,7 @@ func Echo(ctx *context.Context, message *tgbotapi.Message) error {
 		return nil
 	}
 
-	reply := tgbotapi.NewMessage(message.Chat.ID, message.Text)
+	reply := tgbotapi.NewMessage(message.Chat.ID, args)
 	_, err := ctx.TG.Send(reply)
 	return err
 }
