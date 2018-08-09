@@ -19,7 +19,7 @@ func Alexa(ctx *context.Context, message *tgbotapi.Message) error {
 	}
 
 	ytdlCmd := exec.Command("youtube-dl",
-		"-f", "bestaudio[filesize<=5242880]",
+		"-f", "249[filesize<=5242880]",
 		"-o", "-",
 		"ytsearch:"+message.Text[len(prefix):])
 
@@ -30,9 +30,7 @@ func Alexa(ctx *context.Context, message *tgbotapi.Message) error {
 
 	ffCmd := exec.Command("ffmpeg",
 		"-i", "-",
-		"-c", "none",
-		"-c:a", "libvorbis",
-		"-b:a", "48k",
+		"-c:a", "copy",
 		"-f", "ogg",
 		"-",
 	)
