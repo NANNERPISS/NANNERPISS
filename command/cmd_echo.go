@@ -16,7 +16,12 @@ func Echo(ctx *context.Context, message *tgbotapi.Message) error {
 		return nil
 	}
 
+	_, err := ctx.TG.DeleteMessage(tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID))
+	if err != nil {
+		return err
+	}
+
 	reply := tgbotapi.NewMessage(message.Chat.ID, args)
-	_, err := ctx.TG.Send(reply)
+	_, err = ctx.TG.Send(reply)
 	return err
 }
