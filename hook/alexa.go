@@ -12,16 +12,17 @@ func init() {
 	Register("alexa", Alexa)
 }
 
+const cmdPrefix = "alexa, play "
+
 func Alexa(ctx *context.Context, message *tgbotapi.Message) error {
-	prefix := "alexa, play "
-	if !strings.HasPrefix(strings.ToLower(message.Text), prefix) {
+	if !strings.HasPrefix(strings.ToLower(message.Text), cmdPrefix) {
 		return nil
 	}
 
 	ytdlCmd := exec.Command("youtube-dl",
 		"-f", "bestaudio[filesize<=5242880]",
 		"-o", "-",
-		"ytsearch:"+message.Text[len(prefix):])
+		"ytsearch:"+message.Text[len(cmdPrefix):])
 
 	ytdlOut, err := ytdlCmd.StdoutPipe()
 	if err != nil {
