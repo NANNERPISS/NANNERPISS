@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/NANNERPISS/NANNERPISS/context"
+	"github.com/NANNERPISS/NANNERPISS/util"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -53,5 +54,11 @@ func Alexa(ctx *context.Context, message *tgbotapi.Message) error {
 	vc := tgbotapi.NewVoiceUpload(message.Chat.ID, tgbotapi.FileReader{Name: "alexa.ogg", Reader: ffOut, Size: -1})
 	vc.BaseFile.BaseChat.ReplyToMessageID = message.MessageID
 	_, err = ctx.TG.Send(vc)
+
+	if err != nil {
+		reply := util.ReplyTo(message, "no", "")
+		ctx.TG.Send(reply)
+	}
+
 	return err
 }
