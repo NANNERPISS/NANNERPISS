@@ -21,7 +21,7 @@ func Alexa(ctx *context.Context, message *tgbotapi.Message) error {
 	}
 
 	ytdlCmd := exec.Command("youtube-dl",
-		"-f", "bestaudio[filesize<=5242880]",
+		"-f", "bestaudio[filesize<=10485760]",
 		"-o", "-",
 		"ytsearch:"+message.Text[len(cmdPrefix):])
 
