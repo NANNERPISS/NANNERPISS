@@ -47,9 +47,12 @@ func Alexa(ctx *context.Context, message *tgbotapi.Message) error {
 	if err = ytdlCmd.Start(); err != nil {
 		return err
 	}
+	defer ytdlCmd.Wait()
+
 	if err = ffCmd.Start(); err != nil {
 		return err
 	}
+	defer ffCmd.Wait()
 
 	vc := tgbotapi.NewVoiceUpload(message.Chat.ID, tgbotapi.FileReader{Name: "alexa.ogg", Reader: ffOut, Size: -1})
 	vc.BaseFile.BaseChat.ReplyToMessageID = message.MessageID
